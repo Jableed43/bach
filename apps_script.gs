@@ -146,6 +146,23 @@ function saveData(data) {
     // Guardar fila
     sheet.appendRow([timestamp, id, mood, notes]);
 
+    // ---------- Enviar Alarma por Correo ----------
+    try {
+      var miCorreo = "ale-lopez-flores-bach@tu-correo.com"; // CAMBIA ESTO
+      var asunto = "🔔 Nuevo Avance: " + canon;
+      var cuerpo = "Hola Alejandro,\n\nSe ha registrado un nuevo seguimiento de avances en la web.\n\n" +
+                   "Cliente (ID): " + canon + "\n" +
+                   "WhatsApp Original: " + id + "\n" +
+                   "Estado de ánimo: " + mood + "\n" +
+                   "Notas: " + notes + "\n\n" +
+                   "Podés ver todos los detalles en tu Spreadsheet:\n" +
+                   "https://docs.google.com/spreadsheets/d/1T5--JXyChNXqLRqpiKAg81lwD-Y2tF8LxN1ivQPLy5Q/";
+      
+      MailApp.sendEmail(miCorreo, asunto, cuerpo);
+    } catch (eMail) {
+      console.error("Error enviando mail: " + eMail.toString());
+    }
+
     return ContentService
       .createTextOutput(JSON.stringify({ status: 'ok', canonicalId: canon }))
       .setMimeType(ContentService.MimeType.JSON);
