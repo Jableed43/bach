@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Aprendiz - Terapia con Flores de Bach</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="container nav-flex">
+            <div class="logo-container">
+                <img src="logo_bach.png" alt="Logo El Aprendiz" class="nav-logo">
+                <span class="brand-name">El Aprendiz</span>
+            </div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#inicio">Inicio</a></li>
+                    <li><a href="#beneficios">Beneficios</a></li>
+                    <li><a href="#terapeuta">Sobre Mí</a></li>
+                    <li><a href="#reservas" class="btn-cta-nav">Reservar Cita</a></li>
+                </ul>
+            </nav>
+            <div class="menu-toggle" id="mobile-menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="inicio" class="hero">
+            <div class="hero-bg-gradient"></div>
+            <div class="container hero-content">
+                <div class="hero-image-wrapper">
+                    <img src="logo_bach.png" alt="Flores de Bach" class="hero-logo-main">
+                </div>
+                <div class="hero-text">
+                    <h1 class="fade-in">Armonía Natural para tu <span class="highlight">Bienestar</span></h1>
+                    <p class="fade-in-delay">Descubre el poder de las Flores de Bach con Alejandro López. Una terapia personalizada para equilibrar tus emociones y reencontrar tu centro.</p>
+                    <div class="hero-btns fade-in-delay">
+                        <a href="#reservas" class="btn-primary">Agenda tu Consulta</a>
+                        <a href="#beneficios" class="btn-secondary">Saber más</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Beneficios Section -->
+        <section id="beneficios" class="section beneficios">
+            <div class="container">
+                <div class="section-header">
+                    <h2>¿Por qué elegir la Terapia Floral?</h2>
+                    <div class="underline"></div>
+                </div>
+                <div class="grid-beneficios">
+                    <div class="card">
+                        <div class="icon-box">🌿</div>
+                        <h3>Equilibrio Emocional</h3>
+                        <p>Gestiona el estrés, la ansiedad y los miedos de forma natural y segura.</p>
+                    </div>
+                    <div class="card">
+                        <div class="icon-box">✨</div>
+                        <h3>Claridad Mental</h3>
+                        <p>Ayuda en procesos de toma de decisiones y momentos de cambio profundo.</p>
+                    </div>
+                    <div class="card">
+                        <div class="icon-box">🤍</div>
+                        <h3>Autoconocimiento</h3>
+                        <p>Una herramienta poderosa para conectar con tus necesidades reales.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Terapeuta Section -->
+        <section id="terapeuta" class="section terapeuta">
+            <div class="container flex-row">
+                <div class="terapeuta-text">
+                    <h2>Alejandro López</h2>
+                    <p class="subtitle">Terapeuta Floral Profesional</p>
+                    <p>Mi misión es acompañarte en tu proceso de sanación emocional, utilizando el sistema del Dr. Bach para encontrar las esencias que resuenan con tu estado actual.</p>
+                    <p>Cada consulta es un espacio de escucha activa y respeto, donde diseñamos juntos tu fórmula personalizada.</p>
+                </div>
+                <div class="terapeuta-img-box">
+                    <div class="glass-decoration"></div>
+                    <div class="photo-container">
+                         <img src="image_bach.jpg" alt="Terapia Flores de Bach" class="terapeuta-img">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reservas / Contacto Section -->
+        <section id="reservas" class="section reservas">
+            <div class="container">
+                <div class="glass-card form-container">
+                    <h2>Inicia tu proceso</h2>
+                    <p>Al enviar este formulario, se abrirá un chat de WhatsApp para coordinar tu primera sesión.</p>
+                    <form id="contactForm">
+                        <div class="form-group">
+                            <input type="text" id="name" placeholder="Tu Nombre Completo" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="tel" id="phone" placeholder="Tu WhatsApp (ej: +549...)" required>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="message" rows="4" placeholder="¿Qué te trae por aquí?"></textarea>
+                        </div>
+                        <button type="submit" class="btn-submit">Enviar a WhatsApp</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seguimiento Section -->
+        <section id="seguimiento" class="section seguimiento">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Seguimiento de Avances</h2>
+                    <p>Registra cómo te sientes hoy para nuestra próxima sesión.</p>
+                    <div class="underline"></div>
+                </div>
+                <div class="glass-card tracking-container">
+                    <form id="trackingForm">
+                        <p class="small-info">Identifícate con tu número de WhatsApp para el registro.</p>
+                        <div class="form-group">
+                            <input type="tel" id="track-id" placeholder="Tu WhatsApp ID" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="mood">Estado de ánimo hoy:</label>
+                            <select id="track-mood">
+                                <option value="Calma">Calma</option>
+                                <option value="Ansiedad">Ansiedad</option>
+                                <option value="Cansancio">Cansancio</option>
+                                <option value="Alegria">Alegría</option>
+                                <option value="Tristeza">Tristeza</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="track-notes" rows="4" placeholder="¿Cómo has sentido el efecto de las flores?"></textarea>
+                        </div>
+                        <button type="submit" class="btn-secondary-full">Subir Avance</button>
+                    </form>
+                    <div id="trackingStatus" class="hidden"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div class="footer-info">
+                <img src="logo_bach.png" alt="Logo" class="footer-logo">
+                <p>Equilibrio y bienestar a través de la naturaleza.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Navegación</h4>
+                <ul>
+                    <li><a href="#inicio">Inicio</a></li>
+                    <li><a href="#beneficios">Beneficios</a></li>
+                    <li><a href="#reservas">Reservas</a></li>
+                </ul>
+            </div>
+            <div class="footer-contact">
+                <h4>Contacto</h4>
+                <p>Email: alejandro@terapiafloral.com</p>
+                <p>Modalidad: Online / Presencial</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Alejandro López - El Aprendiz. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
