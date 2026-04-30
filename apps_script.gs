@@ -1,100 +1,177 @@
 // ============================================================
 // GOOGLE APPS SCRIPT - "El Aprendiz" Flores de Bach
-// v2 - Una hoja por cliente + normalización de teléfonos ARG
+// v3 - Plantilla por cliente + Fórmulas de Flores + Normalización ARG
 // ============================================================
 
-/**
- * Normaliza números de teléfono argentinos a formato canónico
- * (código de área 2 dígitos + 8 dígitos locales = 10 dígitos)
- * 
- * Casos manejados:
- *   +54 9 11 5596-4569  → 1155964569
- *   +54 9 15 5596-4569  → 1155964569 (el 15 es prefijo móvil, no área)
- *   +549 011 5596-4569  → 1155964569
- *   011 15 5596-4569    → 1155964569
- *   011 5596-4569       → 1155964569
- *   011 5596 4569       → 1155964569
- *   15 5596-4569        → 1155964569 (asume área 11, CABA/GBA)
- *   11 5596-4569        → 1155964569
- */
-function normalizePhone(raw) {
-  // 1. Dejar solo dígitos
-  let n = String(raw).replace(/\D/g, '');
+var SPREADSHEET_ID  = '1T5--JXyChNXqLRqpiKAg81lwD-Y2tF8LxN1ivQPLy5Q';
+var TEMPLATE_NAME   = 'Plantilla';
+var FLORES_LIST     = 'Lista_Flores';
+var MI_CORREO       = 'hugoalelopez@gmail.com';
 
-  // 2. Quitar código de país 54 / 549, y posible trunk 0 después
-  if (n.startsWith('549011'))  n = '11' + n.slice(6);   // +549 + 011 + 8
-  else if (n.startsWith('549')) n = n.slice(3);          // +54 9 → quita 549
-  else if (n.startsWith('54'))  n = n.slice(2);          // +54   → quita 54
+// 39 Flores de Bach
+var FLORES_DE_BACH = [
+  'Agrimony', 'Aspen', 'Beech', 'Centaury', 'Cerato',
+  'Cherry Plum', 'Chestnut Bud', 'Chicory', 'Clematis', 'Crab Apple',
+  'Elm', 'Gentian', 'Gorse', 'Heather', 'Holly',
+  'Honeysuckle', 'Hornbeam', 'Impatiens', 'Larch', 'Mimulus',
+  'Mustard', 'Oak', 'Olive', 'Pine', 'Red Chestnut',
+  'Rock Rose', 'Rock Water', 'Scleranthus', 'Star of Bethlehem', 'Sweet Chestnut',
+  'Vervain', 'Vine', 'Walnut', 'Water Violet', 'White Chestnut',
+  'Wild Oat', 'Wild Rose', 'Willow', 'Rescue Remedy'
+];
 
-  // 3. Quitar trunk 0 (ej: 011… → 11…)
-  if (n.startsWith('0')) n = n.slice(1);
+// ============================================================
+// SETUP: ejecutar UNA SOLA VEZ para crear Lista_Flores
+// Ir a Apps Script → Ejecutar → setupFlores
+// ============================================================
+function setupFlores() {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName(FLORES_LIST);
 
-  // 4. Quitar indicador móvil 9 cuando el resultado tiene 11 dígitos
-  //    Ej: 9 + 11 + 8 = 11 dígitos  → quita el 9 → 10 dígitos
-  if (n.length === 11 && n.charAt(0) === '9') n = n.slice(1);
+  if (sheet) {
+    sheet.clearContents();
+  } else {
+    sheet = ss.insertSheet(FLORES_LIST);
+  }
 
-  // 5. Quitar prefijo 15 después del código de área (2 dígitos)
-  //    Ej: 11 + 15 + 8 = 12 dígitos o 11 + 15 + 8 = 11 dígitos (ya sin 9)
-  if (n.length === 12 && n.slice(2, 4) === '15') n = n.slice(0, 2) + n.slice(4);
-  if (n.length === 11 && n.slice(2, 4) === '15') n = n.slice(0, 2) + n.slice(4);
+  // Encabezado
+  sheet.getRange(1, 1).setValue('Flor').setFontWeight('bold')
+       .setBackground('#1DC2D6').setFontColor('#ffffff');
 
-  // 6. Caso: usuario escribió solo "15 XXXXXXXX" (sin área, asume CABA/GBA = 11)
-  //    15 + 8 dígitos = 10 dígitos empezando con 15
-  if (n.length === 10 && n.startsWith('15')) n = '11' + n.slice(2);
+  // Cargar las flores
+  var data = FLORES_DE_BACH.map(function(f) { return [f]; });
+  sheet.getRange(2, 1, data.length, 1).setValues(data);
+  sheet.setColumnWidth(1, 180);
 
-  // 7. Caso: solo 8 dígitos (sin área) → asume área 11
-  if (n.length === 8) n = '11' + n;
-
-  return n; // canónico: 10 dígitos (ej: 1155964569)
+  SpreadsheetApp.getUi().alert('✅ Lista_Flores creada con ' + data.length + ' flores.');
 }
 
-/**
- * Devuelve (o crea) la hoja del cliente identificado por su número normalizado.
- */
-function getOrCreateClientSheet(ss, normalizedId) {
-  const sheetName = normalizedId; // nombre de la hoja = número canónico
 
-  let sheet = ss.getSheetByName(sheetName);
+// ============================================================
+// NORMALIZACIÓN DE TELÉFONOS ARGENTINOS
+// ============================================================
+function normalizePhone(raw) {
+  var n = String(raw).replace(/\D/g, '');
 
-  if (!sheet) {
-    sheet = ss.insertSheet(sheetName);
+  if (n.startsWith('549011'))      n = '11' + n.slice(6);
+  else if (n.startsWith('549'))    n = n.slice(3);
+  else if (n.startsWith('54'))     n = n.slice(2);
 
-    // Encabezados
-    const headers = ['Fecha', 'WhatsApp ID original', 'Estado de ánimo', 'Notas'];
+  if (n.startsWith('0'))           n = n.slice(1);
+  if (n.length === 11 && n.charAt(0) === '9')         n = n.slice(1);
+  if (n.length === 12 && n.slice(2,4) === '15')       n = n.slice(0,2) + n.slice(4);
+  if (n.length === 11 && n.slice(2,4) === '15')       n = n.slice(0,2) + n.slice(4);
+  if (n.length === 10 && n.startsWith('15'))           n = '11' + n.slice(2);
+  if (n.length === 8)                                  n = '11' + n;
+
+  return n;
+}
+
+// ============================================================
+// OBTENER O CREAR HOJA DE CLIENTE A PARTIR DE LA PLANTILLA
+// ============================================================
+function getOrCreateClientSheet(ss, canon) {
+  var sheet = ss.getSheetByName(canon);
+  if (sheet) return sheet;
+
+  // Buscar la Plantilla
+  var template = ss.getSheetByName(TEMPLATE_NAME);
+
+  if (template) {
+    // Copiar la plantilla y renombrarla con el número del cliente
+    sheet = template.copyTo(ss);
+    sheet.setName(canon);
+    // Mover la hoja nueva al final (antes de Plantilla)
+    var lastPos = ss.getNumSheets();
+    ss.moveActiveSheet(lastPos);
+
+  } else {
+    // Si no existe Plantilla, crear con estructura completa
+    sheet = ss.insertSheet(canon);
+
+    var headers = [
+      'Fecha',
+      'WhatsApp',
+      'Estado de ánimo',
+      'Notas',
+      'Nombre Cliente',   // Manual
+      'Flor 1',           // Manual + Dropdown
+      'Flor 2',
+      'Flor 3',
+      'Flor 4',
+      'Flor 5'
+    ];
+
     sheet.appendRow(headers);
 
-    // Formato: negrita + color de fondo suave
-    const headerRange = sheet.getRange(1, 1, 1, headers.length);
-    headerRange.setFontWeight('bold');
-    headerRange.setBackground('#1DC2D6');
-    headerRange.setFontColor('#ffffff');
+    // Estilo encabezados
+    var headerRange = sheet.getRange(1, 1, 1, headers.length);
+    headerRange.setFontWeight('bold')
+               .setBackground('#1DC2D6')
+               .setFontColor('#ffffff')
+               .setHorizontalAlignment('center');
 
-    // Ancho de columnas automático
-    sheet.setColumnWidth(1, 130);
-    sheet.setColumnWidth(2, 160);
-    sheet.setColumnWidth(3, 140);
-    sheet.setColumnWidth(4, 350);
+    // Anchos de columna
+    sheet.setColumnWidth(1, 130);  // Fecha
+    sheet.setColumnWidth(2, 150);  // WhatsApp
+    sheet.setColumnWidth(3, 130);  // Estado
+    sheet.setColumnWidth(4, 300);  // Notas
+    sheet.setColumnWidth(5, 160);  // Nombre Cliente
+    sheet.setColumnWidth(6, 140);  // Flor 1
+    sheet.setColumnWidth(7, 140);  // Flor 2
+    sheet.setColumnWidth(8, 140);  // Flor 3
+    sheet.setColumnWidth(9, 140);  // Flor 4
+    sheet.setColumnWidth(10, 140); // Flor 5
+
+    // Separador visual entre datos automáticos y manuales (columna 5 en adelante)
+    sheet.getRange(1, 5, 1, 6)
+         .setBackground('#ECDC63')
+         .setFontColor('#000000');
   }
+
+  // Configurar dropdowns de flores en las columnas 6-10 (solo si existe Lista_Flores)
+  applyFloresDropdowns(ss, sheet);
 
   return sheet;
 }
 
 // ============================================================
-// ENDPOINT GET (recibe datos desde la web vía query string)
+// APLICA DROPDOWNS DE FLORES EN COLUMNAS 6-10
+// ============================================================
+function applyFloresDropdowns(ss, sheet) {
+  var floresSheet = ss.getSheetByName(FLORES_LIST);
+  if (!floresSheet) return; // Si no existe Lista_Flores, no hace nada
+
+  var lastRow = floresSheet.getLastRow();
+  if (lastRow < 1) return;
+
+  // Rango fuente: Lista_Flores!A1:A(n)
+  var sourceRange = floresSheet.getRange(1, 1, lastRow, 1);
+  var rule = SpreadsheetApp.newDataValidation()
+    .requireValueInRange(sourceRange, true)
+    .setAllowInvalid(false)
+    .build();
+
+  // Aplicar a columnas 6-10, filas 2 en adelante (100 filas suficientes)
+  for (var col = 6; col <= 10; col++) {
+    sheet.getRange(2, col, 100, 1).setDataValidation(rule);
+  }
+}
+
+// ============================================================
+// ENDPOINT GET (desde la web vía query string)
 // ============================================================
 function doGet(e) {
-  // Sin parámetros: verificación de estado
   if (!e.parameter || !e.parameter.id) {
     return ContentService
       .createTextOutput(JSON.stringify({ status: 'activo', version: '3.0' }))
       .setMimeType(ContentService.MimeType.JSON);
   }
-  // Con parámetros: guardar avance
   return saveData(e.parameter);
 }
 
 // ============================================================
-// ENDPOINT POST (alternativa via fetch POST)
+// ENDPOINT POST (alternativa)
 // ============================================================
 function doPost(e) {
   try {
@@ -108,59 +185,36 @@ function doPost(e) {
 }
 
 // ============================================================
-// LÓGICA CENTRAL: normaliza, crea/abre hoja y guarda fila
+// LÓGICA CENTRAL: normaliza → hoja → guarda fila → manda mail
 // ============================================================
 function saveData(data) {
   try {
-    var id        = String(data.id || '').trim();
-    var timestamp = String(data.timestamp || new Date().toLocaleString());
-    var mood      = String(data.mood || '');
-    var notes     = String(data.notes || '');
+    var id        = String(data.id        || '').trim();
+    var timestamp = String(data.timestamp || new Date().toLocaleString('es-AR'));
+    var mood      = String(data.mood      || '');
+    var notes     = String(data.notes     || '');
 
-    // Normalización del número
-    var canon = id.replace(/\D/g, '');
-    if (canon.startsWith('549011'))  canon = '11' + canon.slice(6);  // 549011 = 6 chars
-    else if (canon.startsWith('549')) canon = canon.slice(3);
-    else if (canon.startsWith('54'))  canon = canon.slice(2);
-    if (canon.startsWith('0'))  canon = canon.slice(1);
-    if (canon.length === 11 && canon.charAt(0) === '9') canon = canon.slice(1);
-    if (canon.length === 11 && canon.slice(2,4) === '15') canon = canon.slice(0,2) + canon.slice(4);
-    if (canon.length === 10 && canon.startsWith('15')) canon = '11' + canon.slice(2);
-    if (canon.length === 8) canon = '11' + canon;
+    var canon = normalizePhone(id);
 
-    // Abrir spreadsheet
-    var ss = SpreadsheetApp.openById('1T5--JXyChNXqLRqpiKAg81lwD-Y2tF8LxN1ivQPLy5Q');
+    var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = getOrCreateClientSheet(ss, canon);
 
-    // Obtener o crear hoja por cliente
-    var sheet = ss.getSheetByName(canon);
-    if (!sheet) {
-      sheet = ss.insertSheet(canon);
-      sheet.appendRow(['Fecha', 'WhatsApp Original', 'Estado', 'Notas']);
-      sheet.getRange(1, 1, 1, 4)
-           .setFontWeight('bold')
-           .setBackground('#1DC2D6')
-           .setFontColor('#ffffff');
-      sheet.setColumnWidths(1, 4, 170);
-    }
+    // Guardar solo las 4 columnas automáticas; las manuales quedan vacías
+    sheet.appendRow([timestamp, id, mood, notes, '', '', '', '', '', '']);
 
-    // Guardar fila
-    sheet.appendRow([timestamp, id, mood, notes]);
-
-    // ---------- Enviar Alarma por Correo ----------
+    // Alarma por correo
     try {
-      var miCorreo = "ale-lopez-flores-bach@tu-correo.com"; // CAMBIA ESTO
-      var asunto = "🔔 Nuevo Avance: " + canon;
-      var cuerpo = "Hola Alejandro,\n\nSe ha registrado un nuevo seguimiento de avances en la web.\n\n" +
-                   "Cliente (ID): " + canon + "\n" +
-                   "WhatsApp Original: " + id + "\n" +
-                   "Estado de ánimo: " + mood + "\n" +
-                   "Notas: " + notes + "\n\n" +
-                   "Podés ver todos los detalles en tu Spreadsheet:\n" +
-                   "https://docs.google.com/spreadsheets/d/1T5--JXyChNXqLRqpiKAg81lwD-Y2tF8LxN1ivQPLy5Q/";
-      
-      MailApp.sendEmail(miCorreo, asunto, cuerpo);
+      var asunto = '🔔 Nuevo Avance - ' + canon;
+      var cuerpo = 'Hola Alejandro,\n\nNuevo reporte recibido.\n\n' +
+                   'ID canónico : ' + canon + '\n' +
+                   'WhatsApp    : ' + id    + '\n' +
+                   'Estado      : ' + mood  + '\n' +
+                   'Notas       : ' + notes + '\n\n' +
+                   'Ver en el Spreadsheet:\n' +
+                   'https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID + '/';
+      MailApp.sendEmail(MI_CORREO, asunto, cuerpo);
     } catch (eMail) {
-      console.error("Error enviando mail: " + eMail.toString());
+      console.error('Error mail: ' + eMail.toString());
     }
 
     return ContentService
